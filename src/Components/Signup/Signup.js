@@ -1,51 +1,71 @@
-import React, { useContext, useState } from 'react';
+import React, { useState } from 'react';
 
-import { useNavigate,Link } from 'react-router-dom';
+import { useNavigate,Link} from 'react-router-dom';
 import Logo from '../../olx-logo.png';
 import './Signup.css';
 import { auth, firestore } from '../../firebase/config'; 
-import { createUserWithEmailAndPassword } from 'firebase/auth'; 
+import { createUserWithEmailAndPassword,updateProfile } from 'firebase/auth'; 
 import { collection, addDoc } from 'firebase/firestore'; 
+import PhoneInput from 'react-phone-number-input';
+
+import 'react-phone-number-input/style.css';
+
 export default function Signup() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
 const navigate = useNavigate()
-const HandleSubmit = (e) => {
+const HandleSubmit = async (e) => {
   e.preventDefault();
-  createUserWithEmailAndPassword(auth, email, password) 
-  .then((result) => {
+
+  try {
+    const result = await createUserWithEmailAndPassword(auth, email, password);
     const userRef = collection(firestore, 'users');
-    addDoc(userRef, {
+    await updateProfile(result.user, { displayName: username });
+    await addDoc(userRef, {
       id: result.user.uid,
-      username: username,
-      phone: phone,
-    }).then(() => {
-        navigate('/login');
-        console.log("User registered successfully.");
-      })
-      .catch((error) => {
-        console.error("Error registering user:", error);
-      });
+      displayName: username,
+      phoneNumber: phone,
     });
+    console.log("User registered successfully.");
+    navigate('/login');
+  } catch (error) {
+    setError(error.message);
+  }
 }
+const splitTextIntoChunks = (text, chunkSize) => {
+  const chunks = [];
+  for (let i = 0; i < text.length; i += chunkSize) {
+    chunks.push(text.slice(i, i + chunkSize));
+  }
+  return chunks;
+};
   return (
     <div>
       <div className="signupParentDiv">
         <img width="200px" height="200px" src={Logo} alt="Logo"></img>
         <form onSubmit={HandleSubmit}>
-          <label htmlFor="fname">Username</label>
+        {error && (
+          <div className="error">
+            {splitTextIntoChunks(error, 28).map((chunk, index) => (
+              <p key={index}>{chunk}</p>
+            ))}
+          </div>
+        )}
+        <label htmlFor="fname">Username</label>
           <br />
           <input
             className="input"
             type="text"
             value={username}
-            onChange={(e)=>setUsername(e.target.value)}
+            onChange={(e) => setUsername(e.target.value)}
             id="fname"
             name="name"
-            defaultValue="John"
+            placeholder="John"
+            autoComplete="username"
           />
           <br />
           <label htmlFor="fname">Email</label>
@@ -57,22 +77,24 @@ const HandleSubmit = (e) => {
             onChange={(e)=>setEmail(e.target.value)}
             id="fname"
             name="email"
-            defaultValue="John"
+            autoComplete="email"
+      
           />
           <br />
-          <label htmlFor="lname">Phone</label>
+          <label>Phone Number</label>
           <br />
-          <input
-            className="input"
-            type="number"
+          <PhoneInput
+            international
+            defaultCountry="IN" 
             value={phone}
-            onChange={(e)=>setPhone(e.target.value)}
-            id="lname"
+            onChange={(value) => setPhone(value)}
+            id="phone"
             name="phone"
-            defaultValue="Doe"
+            placeholder="Enter phone number"
+            autoComplete="phone"
           />
           <br />
-          <label htmlFor="lname">Password</label>
+          <label htmlFor="password">Password</label>
           <br />
           <input
             className="input"
@@ -81,13 +103,14 @@ const HandleSubmit = (e) => {
             onChange={(e)=>setPassword(e.target.value)}
             id="lname"
             name="password"
-            defaultValue="Doe"
+            autoComplete="current-password"
+       
           />
           <br />
           <br />
           <button>Signup</button>
         </form>
-        {/* <Link>Login</Link> */}
+        <Link to='/'>Login</Link>
       </div>
     </div>
   );
