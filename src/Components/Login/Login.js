@@ -13,8 +13,7 @@ function Login() {
   const navigate = useNavigate()
  const handleLogin = async (e)=>{
    e.preventDefault();
-   signInWithEmailAndPassword(auth, email, password).then((userCredential)=>{
-  //  const user = userCredential.user;
+   signInWithEmailAndPassword(auth, email, password).then(()=>{
     navigate('/')
    }).catch((error)=>{
     setError(error.message)

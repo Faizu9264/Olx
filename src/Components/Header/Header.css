@@ -162,3 +162,11 @@
     display: none;
   }
 }
+
+.logout{
+  color: red;
+}
+
+.link{
+  text-decoration: none;
+}
